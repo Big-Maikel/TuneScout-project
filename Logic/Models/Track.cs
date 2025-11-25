@@ -29,5 +29,7 @@ public partial class Track
 
     public virtual Mood? Mood { get; set; }
 
+    public virtual Language? Language { get; set; }
+
     public virtual ICollection<Swipe> Swipes { get; set; } = new List<Swipe>();
 }

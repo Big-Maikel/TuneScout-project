@@ -20,6 +20,8 @@ public partial class TuneScoutContext : DbContext
 
     public virtual DbSet<Mood> Moods { get; set; }
 
+    public virtual DbSet<Language> Languages { get; set; }
+
     public virtual DbSet<Preference> Preferences { get; set; }
 
     public virtual DbSet<Swipe> Swipes { get; set; }
@@ -39,10 +41,10 @@ public partial class TuneScoutContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Name)
-                .HasColumnType("text")
+                .HasColumnType("nvarchar(max)")
                 .HasColumnName("name");
             entity.Property(e => e.SpotifyUri)
-                .HasColumnType("text")
+                .HasColumnType("nvarchar(max)")
                 .HasColumnName("spotify_uri");
         });
 
@@ -52,7 +54,17 @@ public partial class TuneScoutContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Name)
-                .HasColumnType("text")
+                .HasColumnType("nvarchar(max)")
+                .HasColumnName("name");
+        });
+
+        modelBuilder.Entity<Language>(entity =>
+        {
+            entity.ToTable("language");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Name)
+                .HasColumnType("nvarchar(max)")
                 .HasColumnName("name");
         });
 
@@ -74,6 +86,10 @@ public partial class TuneScoutContext : DbContext
                 .HasForeignKey(d => d.MoodId)
                 .HasConstraintName("FK_preference_mood");
 
+            entity.HasOne(d => d.Language).WithMany(p => p.Preferences)
+                .HasForeignKey(d => d.LanguageId)
+                .HasConstraintName("FK_preference_language");
+
             entity.HasOne(d => d.User).WithMany(p => p.Preferences)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -86,7 +102,7 @@ public partial class TuneScoutContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Direction)
-                .HasColumnType("text")
+                .HasColumnType("nvarchar(max)")
                 .HasColumnName("direction");
             entity.Property(e => e.Timestamp)
                 .HasDefaultValueSql("(getdate())")
@@ -112,21 +128,21 @@ public partial class TuneScoutContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Artist)
-                .HasColumnType("text")
+                .HasColumnType("nvarchar(max)")
                 .HasColumnName("artist");
             entity.Property(e => e.Explicit).HasColumnName("explicit");
             entity.Property(e => e.GenreId).HasColumnName("genre_id");
             entity.Property(e => e.LanguageId).HasColumnName("language_id");
             entity.Property(e => e.MoodId).HasColumnName("mood_id");
             entity.Property(e => e.Name)
-                .HasColumnType("text")
+                .HasColumnType("nvarchar(max)")
                 .HasColumnName("name");
             entity.Property(e => e.PreviewUrl)
                 .HasMaxLength(10)
                 .IsFixedLength()
                 .HasColumnName("preview_url");
             entity.Property(e => e.SpotifyUri)
-                .HasColumnType("text")
+                .HasColumnType("nvarchar(max)")
                 .HasColumnName("spotify_uri");
             entity.Property(e => e.Valence).HasColumnName("valence");
 
@@ -137,6 +153,10 @@ public partial class TuneScoutContext : DbContext
             entity.HasOne(d => d.Mood).WithMany(p => p.Tracks)
                 .HasForeignKey(d => d.MoodId)
                 .HasConstraintName("FK_track_mood");
+
+            entity.HasOne(d => d.Language).WithMany(p => p.Tracks)
+               .HasForeignKey(d => d.LanguageId)
+               .HasConstraintName("FK_track_language");
         });
 
         modelBuilder.Entity<User>(entity =>
@@ -145,14 +165,14 @@ public partial class TuneScoutContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Email)
-                .HasColumnType("text")
+                .HasColumnType("nvarchar(max)")
                 .HasColumnName("email");
             entity.Property(e => e.Name)
-                .HasColumnType("text")
+                .HasColumnType("nvarchar(max)")
                 .HasColumnName("name");
             entity.Property(e => e.NoExplicit).HasColumnName("no_explicit");
             entity.Property(e => e.Password)
-                .HasColumnType("text")
+                .HasColumnType("nvarchar(max)")
                 .HasColumnName("password");
         });
 
