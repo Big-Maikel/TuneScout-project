@@ -1,0 +1,54 @@
+﻿@page
+@model TuneScout.Pages.SettingsModel
+@{
+    ViewData["Title"] = "Instellingen";
+}
+
+<h2>Instellingen</h2>
+
+<form method="post">
+    <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" asp-for="NoExplicit" id="noExplicitSwitch" />
+        <label class="form-check-label" for="noExplicitSwitch">Geen expliciete muziek (schakel aan om expliciete tracks te blokkeren)</label>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Taalvoorkeur</label>
+        <select asp-for="SelectedLanguageId" class="form-select">
+            <option value="">Geen voorkeur</option>
+            @foreach (var lang in Model.Languages)
+            {
+                <option value="@lang.Id" selected="@(Model.SelectedLanguageId == lang.Id ? "selected" : null)">@lang.Name</option>
+            }
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Genre voorkeur</label>
+        <select asp-for="SelectedGenreIds" class="form-select" multiple>
+            @foreach (var g in Model.Genres)
+            {
+                <option value="@g.Id" selected="@(Model.SelectedGenreIds?.Contains(g.Id) == true ? "selected" : null)">@g.Name</option>
+            }
+        </select>
+        <small class="form-text text-muted">Houd Ctrl (Windows) of Cmd (Mac) ingedrukt om meerdere items te selecteren.</small>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Mood voorkeur</label>
+        <select asp-for="SelectedMoodIds" class="form-select" multiple>
+            @foreach (var m in Model.Moods)
+            {
+                <option value="@m.Id" selected="@(Model.SelectedMoodIds?.Contains(m.Id) == true ? "selected" : null)">@m.Name</option>
+            }
+        </select>
+        <small class="form-text text-muted">Houd Ctrl (Windows) of Cmd (Mac) ingedrukt om meerdere items te selecteren.</small>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Opslaan</button>
+
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <div class="mt-3 text-success">@Model.Message</div>
+    }
+</form>

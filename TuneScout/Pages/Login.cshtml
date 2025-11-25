@@ -1,0 +1,110 @@
+﻿@page
+@model TuneScout.Pages.LoginModel
+@{
+    ViewData["Title"] = "Inloggen";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h3 class="card-title text-center mb-3">Welkom bij TuneScout</h3>
+
+                    <ul class="nav nav-tabs justify-content-center" id="authTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login-pane" type="button" role="tab" aria-controls="login-pane" aria-selected="true">Inloggen</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-pane" type="button" role="tab" aria-controls="register-pane" aria-selected="false">Registreren</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content mt-4">
+                        <div class="tab-pane fade show active" id="login-pane" role="tabpanel" aria-labelledby="login-tab">
+                            <form method="post" novalidate>
+                                <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Email" class="form-label"></label>
+                                    <input asp-for="Email" class="form-control" placeholder="E-mail" />
+                                    <span asp-validation-for="Email" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Password" class="form-label"></label>
+                                    <input asp-for="Password" type="password" class="form-control" placeholder="Wachtwoord" />
+                                    <span asp-validation-for="Password" class="text-danger"></span>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg">Inloggen</button>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                                {
+                                    <div class="alert alert-danger mt-3" role="alert">@Model.ErrorMessage</div>
+                                }
+                            </form>
+                        </div>
+
+                        <div class="tab-pane fade" id="register-pane" role="tabpanel" aria-labelledby="register-tab">
+                            <form method="post" asp-page-handler="Register" novalidate>
+                                <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+                                <div class="mb-3">
+                                    <label asp-for="RegisterName" class="form-label"></label>
+                                    <input asp-for="RegisterName" class="form-control" placeholder="Naam" />
+                                    <span asp-validation-for="RegisterName" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="RegisterEmail" class="form-label"></label>
+                                    <input asp-for="RegisterEmail" class="form-control" placeholder="E-mail" />
+                                    <span asp-validation-for="RegisterEmail" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="RegisterPassword" class="form-label"></label>
+                                    <input asp-for="RegisterPassword" type="password" class="form-control" placeholder="Wachtwoord" />
+                                    <span asp-validation-for="RegisterPassword" class="text-danger"></span>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-outline-secondary btn-lg">Registreren</button>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(Model.RegisterMessage))
+                                {
+                                    <div class="alert alert-info mt-3" role="alert">@Model.RegisterMessage</div>
+                                }
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer text-muted text-center">
+                    <small>Nieuwe bij TuneScout? Registreer om te beginnen met ontdekken.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var showRegister = @(!string.IsNullOrEmpty(Model.RegisterMessage) ? "true" : "false");
+            var showLogin = @(!string.IsNullOrEmpty(Model.ErrorMessage) ? "true" : "false");
+
+            if (showRegister === "true") {
+                var registerTab = document.querySelector('#register-tab');
+                if (registerTab) new bootstrap.Tab(registerTab).show();
+            } else if (showLogin === "true") {
+                var loginTab = document.querySelector('#login-tab');
+                if (loginTab) new bootstrap.Tab(loginTab).show();
+            }
+        })();
+    </script>
+}

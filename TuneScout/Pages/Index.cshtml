@@ -1,0 +1,215 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="text-center">
+    <h1>Welkom in TuneScout, de beste manier om nieuwe muziek te vinden</h1>
+
+    @if (!Model.IsAuthenticated)
+    {
+        <div class="alert alert-warning">
+            Je moet <a asp-page="/Login">inloggen</a> om te kunnen swipen.
+        </div>
+    }
+
+    <div id="track-container" style="margin-top: 30px;">
+        <div id="track-card" class="card p-3 mx-auto" style="max-width:420px; touch-action: pan-y;">
+            <h3 id="track-name">Track naam</h3>
+            <p id="track-artist">Artiest</p>
+            <div id="track-actions" class="mt-2">
+                <a id="track-preview" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener noreferrer" style="display:none;">Bekijk op YouTube</a>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <button id="dislike-btn" class="btn btn-danger">Dislike</button>
+            <button id="like-btn" class="btn btn-success me-2">Like</button>
+        </div>
+    </div>
+</div>
+
+<form id="antiForm">@Html.AntiForgeryToken()</form>
+
+@section Scripts {
+    <style>
+        #track-card {
+            transition: transform 200ms ease, opacity 200ms ease;
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: grab;
+        }
+
+            #track-card.dragging {
+                transition: none;
+                cursor: grabbing;
+            }
+        .swipe-disabled #track-card {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+
+    <script>
+        const tracks = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Songs, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+        const isAuthenticated = @Model.IsAuthenticated.ToString().ToLower();
+
+        let currentIndex = 0;
+        const card = document.getElementById("track-card");
+        const trackName = document.getElementById("track-name");
+        const trackArtist = document.getElementById("track-artist");
+        const previewLink = document.getElementById("track-preview");
+        const likeBtn = document.getElementById("like-btn");
+        const dislikeBtn = document.getElementById("dislike-btn");
+        const token = document.querySelector('#antiForm input[name="__RequestVerificationToken"]')?.value;
+
+        function showTrack(index) {
+            if (!card) return;
+            if (index >= tracks.length) {
+                document.getElementById("track-container").innerHTML = "<p>Geen tracks meer!</p>";
+                return;
+            }
+            const t = tracks[index];
+            trackName.innerText = t.name;
+            trackArtist.innerText = t.artist;
+
+            if (t.previewUrl) {
+                previewLink.href = t.previewUrl;
+                previewLink.style.display = "inline-block";
+            } else {
+                previewLink.href = "#";
+                previewLink.style.display = "none";
+            }
+
+            card.style.transform = "translateX(0) rotate(0deg)";
+            card.style.opacity = "1";
+        }
+
+        async function postSwipeThenRefresh(trackId, direction) {
+            try {
+                const body = new URLSearchParams();
+                if (token) body.append('__RequestVerificationToken', token);
+                body.append('trackId', trackId);
+                body.append('direction', direction);
+                const swipeRes = await fetch('?handler=Swipe', { method: 'POST', body });
+
+                if (swipeRes.status === 401) {
+                    window.location.href = '/Login';
+                    return;
+                }
+
+                const res = await fetch('?handler=Recommendations');
+                if (res.ok) {
+                    const json = await res.json();
+                    tracks.length = 0;
+                    Array.prototype.push.apply(tracks, json);
+                    currentIndex = 0;
+                    showTrack(currentIndex);
+                } else {
+                    currentIndex++;
+                    showTrack(currentIndex);
+                }
+            } catch (err) {
+                console.error('Swipe failed:', err);
+                currentIndex++;
+                showTrack(currentIndex);
+            }
+        }
+
+        function likeCurrent() {
+            if (!isAuthenticated) { window.location.href = '/Login'; return; }
+            if (currentIndex >= tracks.length) return;
+            animateOutAndNext(1, tracks[currentIndex].id, 'like');
+        }
+
+        function dislikeCurrent() {
+            if (!isAuthenticated) { window.location.href = '/Login'; return; }
+            if (currentIndex >= tracks.length) return;
+            animateOutAndNext(-1, tracks[currentIndex].id, 'dislike');
+        }
+
+        if (!isAuthenticated) {
+            likeBtn.disabled = true;
+            dislikeBtn.disabled = true;
+            document.getElementById('track-container').classList.add('swipe-disabled');
+        } else {
+            likeBtn.addEventListener("click", likeCurrent);
+            dislikeBtn.addEventListener("click", dislikeCurrent);
+        }
+
+        (function () {
+            if (!card) return;
+            if (!isAuthenticated) return;
+
+            let startX = 0;
+            let currentX = 0;
+            let isDragging = false;
+            const threshold = 100;
+            const offscreen = 1000;
+
+            function setTransform(dx) {
+                const rotate = dx / 20;
+                const opacity = Math.max(0.35, 1 - Math.abs(dx) / 400);
+                card.style.transform = `translateX(${dx}px) rotate(${rotate}deg)`;
+                card.style.opacity = `${opacity}`;
+            }
+
+            function handleStart(clientX) { startX = clientX; currentX = clientX; isDragging = true; card.classList.add("dragging"); }
+            function handleMove(clientX) { if (!isDragging) return; currentX = clientX; setTransform(currentX - startX); }
+            function handleEnd() {
+                if (!isDragging) return;
+                isDragging = false; card.classList.remove("dragging");
+                const dx = currentX - startX;
+                if (dx > threshold) {
+                    card.style.transition = "transform 300ms ease, opacity 300ms ease";
+                    card.style.transform = `translateX(${offscreen}px) rotate(20deg)`;
+                    card.style.opacity = "0";
+                    card.addEventListener("transitionend", async function onLike() {
+                        card.removeEventListener("transitionend", onLike);
+                        await postSwipeThenRefresh(tracks[currentIndex].id, 'like');
+                    }, { once: true });
+                } else if (dx < -threshold) {
+                    card.style.transition = "transform 300ms ease, opacity 300ms ease";
+                    card.style.transform = `translateX(${-offscreen}px) rotate(-20deg)`;
+                    card.style.opacity = "0";
+                    card.addEventListener("transitionend", async function onDislike() {
+                        card.removeEventListener("transitionend", onDislike);
+                        await postSwipeThenRefresh(tracks[currentIndex].id, 'dislike');
+                    }, { once: true });
+                } else {
+                    card.style.transition = "transform 200ms ease, opacity 200ms ease";
+                    card.style.transform = "translateX(0) rotate(0deg)";
+                    card.style.opacity = "1";
+                }
+            }
+
+            card.addEventListener("touchstart", (e) => { if (e.touches.length === 1) handleStart(e.touches[0].clientX); }, { passive: true });
+            card.addEventListener("touchmove", (e) => { if (e.touches.length === 1) handleMove(e.touches[0].clientX); }, { passive: true });
+            card.addEventListener("touchend", (e) => { handleEnd(); });
+
+            card.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                handleStart(e.clientX);
+                function moveHandler(ev) { handleMove(ev.clientX); }
+                function upHandler() { handleEnd(); window.removeEventListener("mousemove", moveHandler); window.removeEventListener("mouseup", upHandler); }
+                window.addEventListener("mousemove", moveHandler);
+                window.addEventListener("mouseup", upHandler);
+            });
+        })();
+
+        function animateOutAndNext(direction, trackId, dirString) {
+            if (!card) return;
+            const off = direction > 0 ? 1000 : -1000;
+            card.style.transition = "transform 300ms ease, opacity 300ms ease";
+            card.style.transform = `translateX(${off}px) rotate(${direction * 20}deg)`;
+            card.style.opacity = "0";
+            card.addEventListener("transitionend", async function handler() {
+                card.removeEventListener("transitionend", handler);
+                await postSwipeThenRefresh(trackId, dirString);
+            }, { once: true });
+        }
+
+        showTrack(currentIndex);
+    </script>
+}

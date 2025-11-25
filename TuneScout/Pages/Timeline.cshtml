@@ -1,0 +1,74 @@
+﻿@page
+@model TuneScout.Pages.TimelineModel
+@{
+    ViewData["Title"] = "Tijdlijn";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<p>Hier zie je een overzicht van je muzieksmaak gebaseerd op de nummers die je hebt geliked.</p>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header">Top Genres</div>
+            <div class="card-body">
+                @if (!Model.ViewModel.TopGenres.Any())
+                {
+                    <div class="text-muted">Nog geen likes in deze categorie.</div>
+                }
+                else
+                {
+                    <ol class="mb-0">
+                        @foreach (var g in Model.ViewModel.TopGenres)
+                        {
+                            <li>@g.Name (@g.Count)</li>
+                        }
+                    </ol>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header">Top Moods</div>
+            <div class="card-body">
+                @if (!Model.ViewModel.TopMoods.Any())
+                {
+                    <div class="text-muted">Nog geen likes in deze categorie.</div>
+                }
+                else
+                {
+                    <ol class="mb-0">
+                        @foreach (var m in Model.ViewModel.TopMoods)
+                        {
+                            <li>@m.Name (@m.Count)</li>
+                        }
+                    </ol>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header">Top Languages</div>
+            <div class="card-body">
+                @if (!Model.ViewModel.TopLanguages.Any())
+                {
+                    <div class="text-muted">Nog geen likes in deze categorie.</div>
+                }
+                else
+                {
+                    <ol class="mb-0">
+                        @foreach (var l in Model.ViewModel.TopLanguages)
+                        {
+                            <li>@l.Name (@l.Count)</li>
+                        }
+                    </ol>
+                }
+            </div>
+        </div>
+    </div>
+</div>

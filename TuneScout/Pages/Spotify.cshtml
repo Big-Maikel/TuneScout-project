@@ -1,0 +1,25 @@
+﻿@page
+@model TuneScout.Pages.SpotifyModel
+@{
+    ViewData["Title"] = "Spotify";
+}
+
+<h2>Spotify</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        @if (Model.SpotifyConnected)
+        {
+            <p class="mb-2">Spotify is verbonden met TuneScout.</p>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" asp-controller="Song" asp-action="Status">Bekijk status</a>
+                <a class="btn btn-outline-primary" href="/">Terug naar start</a>
+            </div>
+        }
+        else
+        {
+            <p class="mb-3">Verbind je Spotify-account om gepersonaliseerde aanbevelingen en afspeellijsten te gebruiken.</p>
+            <a class="btn btn-success" asp-controller="Song" asp-action="Connect">Verbind met Spotify</a>
+        }
+    </div>
+</div>
