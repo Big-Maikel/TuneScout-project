@@ -32,9 +32,6 @@ namespace DataAccess.Repositories
         {
             _httpClient = httpClient;
             _logger = logger;
-            _clientId = config["Spotify:ClientId"] ?? throw new ArgumentNullException("Spotify:ClientId missing");
-            _clientSecret = config["Spotify:ClientSecret"] ?? throw new ArgumentNullException("Spotify:ClientSecret missing");
-            _redirectUri = config["Spotify:RedirectUri"] ?? throw new ArgumentNullException("Spotify:RedirectUri missing");
         }
 
         private async Task EnsureAppTokenAsync(CancellationToken cancellationToken = default)

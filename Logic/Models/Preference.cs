@@ -19,5 +19,7 @@ public partial class Preference
 
     public virtual Mood? Mood { get; set; }
 
+    public virtual Language? Language { get; set; }
+
     public virtual User User { get; set; } = null!;
 }
