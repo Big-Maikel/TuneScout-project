@@ -1,0 +1,175 @@
+﻿@page
+@model TuneScout.Pages.TimelineDetailsModel
+@{
+    ViewData["Title"] = $"Gelikte {Model.CategoryName} nummers";
+}
+
+<div class="mb-3">
+    <a asp-page="/Timeline" 
+       asp-route-period="@Model.Period"
+       asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")"
+       asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")"
+       class="btn btn-outline-secondary">← Terug naar tijdlijn</a>
+</div>
+
+<h1>@ViewData["Title"]</h1>
+
+<p class="lead">
+    @if (Model.CategoryType.ToLower() == "genre")
+    {
+        <text>Alle nummers van het genre <strong>@Model.CategoryName</strong> die je hebt geliked</text>
+    }
+    else if (Model.CategoryType.ToLower() == "mood")
+    {
+        <text>Alle nummers met de mood <strong>@Model.CategoryName</strong> die je hebt geliked</text>
+    }
+    else if (Model.CategoryType.ToLower() == "language")
+    {
+        <text>Alle nummers in de taal <strong>@Model.CategoryName</strong> die je hebt geliked</text>
+    }
+    @if (Model.Period == "custom" && Model.FromDate.HasValue)
+    {
+        <text> van @Model.FromDate.Value.ToString("dd MMM yyyy")</text>
+        @if (Model.ToDate.HasValue)
+        {
+            <text> tot @Model.ToDate.Value.ToString("dd MMM yyyy")</text>
+        }
+        else
+        {
+            <text> tot vandaag</text>
+        }
+    }
+    else if (Model.Period == "week")
+    {
+        <text> deze week</text>
+    }
+    else if (Model.Period == "month")
+    {
+        <text> deze maand</text>
+    }
+    <text>.</text>
+</p>
+
+@if (!Model.LikedTracks.Any())
+{
+    <div class="alert alert-info">
+        Je hebt nog geen nummers in deze categorie geliket.
+    </div>
+}
+else
+{
+    <div class="row">
+        @foreach (var track in Model.LikedTracks)
+        {
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100">
+                    @if (!string.IsNullOrEmpty(track.PreviewUrl))
+                    {
+                        <a href="@track.PreviewUrl" 
+                           target="_blank" 
+                           rel="noopener noreferrer"
+                           class="youtube-thumbnail-link">
+                            <img src="" 
+                                 alt="@track.Name - @track.Artist" 
+                                 class="card-img-top youtube-thumbnail" 
+                                 data-youtube-url="@track.PreviewUrl"
+                                 style="height: 200px; object-fit: cover;" />
+                        </a>
+                    }
+                    else
+                    {
+                        <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 200px;">
+                            <span class="text-white">Geen preview beschikbaar</span>
+                        </div>
+                    }
+                    
+                    <div class="card-body">
+                        <h5 class="card-title">@track.Name</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">@track.Artist</h6>
+                        
+                        <ul class="list-unstyled small">
+                            <li><strong>Genre:</strong> @track.GenreName</li>
+                            <li><strong>Mood:</strong> @track.MoodName</li>
+                            <li><strong>Taal:</strong> @track.LanguageName</li>
+                            <li><strong>Geliked op:</strong> @track.LikedAt.ToString("dd-MM-yyyy HH:mm")</li>
+                        </ul>
+
+                        @if (!string.IsNullOrEmpty(track.PreviewUrl))
+                        {
+                            <a href="@track.PreviewUrl" 
+                               target="_blank" 
+                               rel="noopener noreferrer" 
+                               class="btn btn-sm btn-outline-primary mt-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-youtube" viewBox="0 0 16 16">
+                                    <path d="M8.051 1.999h.089c.822.003 4.987.033 6.11.335a2.01 2.01 0 0 1 1.415 1.42c.101.38.172.883.22 1.402l.01.104.022.26.008.104c.065.914.073 1.77.074 1.957v.075c-.001.194-.01 1.108-.082 2.06l-.008.105-.009.104c-.05.572-.124 1.14-.235 1.558a2.007 2.007 0 0 1-1.415 1.42c-1.16.312-5.569.334-6.18.335h-.142c-.309 0-1.587-.006-2.927-.052l-.17-.006-.087-.004-.171-.007-.171-.007c-1.11-.049-2.167-.128-2.654-.26a2.007 2.007 0 0 1-1.415-1.419c-.111-.417-.185-.986-.235-1.558L.09 9.82l-.008-.104A31.4 31.4 0 0 1 0 7.68v-.123c.002-.215.01-.958.064-1.778l.007-.103.003-.052.008-.104.022-.26.01-.104c.048-.519.119-1.023.22-1.402a2.007 2.007 0 0 1 1.415-1.42c.487-.13 1.544-.21 2.654-.26l.17-.007.172-.006.086-.003.171-.007A99.788 99.788 0 0 1 7.858 2h.193zM6.4 5.209v4.818l4.157-2.408L6.4 5.209z"/>
+                                </svg>
+                                Bekijk op YouTube
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="mt-3">
+        <p class="text-muted">Totaal: @Model.LikedTracks.Count @(Model.LikedTracks.Count == 1 ? "nummer" : "nummers")</p>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function extractYouTubeId(url) {
+            if (!url) return null;
+            const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+            const match = url.match(regex);
+            return match ? match[1] : null;
+        }
+
+        function getYouTubeThumbnail(videoId) {
+            return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const thumbnails = document.querySelectorAll('.youtube-thumbnail');
+            
+            thumbnails.forEach(function(thumbnail) {
+                const youtubeUrl = thumbnail.getAttribute('data-youtube-url');
+                const videoId = extractYouTubeId(youtubeUrl);
+                
+                if (videoId) {
+                    thumbnail.src = getYouTubeThumbnail(videoId);
+                    
+                    thumbnail.onerror = function() {
+                        this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180"%3E%3Crect width="320" height="180" fill="%23dee2e6"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="%236c757d"%3EGeen thumbnail beschikbaar%3C/text%3E%3C/svg%3E';
+                    };
+                }
+            });
+        });
+    </script>
+
+    <style>
+        .youtube-thumbnail-link {
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .youtube-thumbnail-link:hover img {
+            transform: scale(1.05);
+        }
+
+        .youtube-thumbnail {
+            transition: transform 0.3s ease;
+            width: 100%;
+        }
+
+        .card {
+            transition: box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+    </style>
+}

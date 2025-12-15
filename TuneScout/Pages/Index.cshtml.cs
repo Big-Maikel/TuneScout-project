@@ -83,7 +83,7 @@ namespace TuneScout.Pages
                 UserId = userId.Value,
                 TrackId = trackId,
                 Direction = direction,
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTime.Now
             };
 
             _context.Swipes.Add(swipe);

@@ -19,7 +19,9 @@
             <h3 id="track-name">Track naam</h3>
             <p id="track-artist">Artiest</p>
             <div id="track-actions" class="mt-2">
-                <a id="track-preview" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener noreferrer" style="display:none;">Bekijk op YouTube</a>
+                <a id="track-preview" target="_blank" rel="noopener noreferrer" style="display:none;">
+                    <img id="track-thumbnail" src="" alt="YouTube Preview" class="img-fluid rounded" style="max-width: 100%; cursor: pointer;" />
+                </a>
             </div>
         </div>
 
@@ -34,6 +36,23 @@
 
 @section Scripts {
     <style>
+        html, body {
+            overflow: hidden;
+            height: 100%;
+        }
+
+        body > .container {
+            height: calc(100vh - 80px);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        body > .container > main {
+            width: 100%;
+        }
+
         #track-card {
             transition: transform 200ms ease, opacity 200ms ease;
             user-select: none;
@@ -41,13 +60,22 @@
             cursor: grab;
         }
 
-            #track-card.dragging {
-                transition: none;
-                cursor: grabbing;
-            }
+        #track-card.dragging {
+            transition: none;
+            cursor: grabbing;
+        }
+
         .swipe-disabled #track-card {
             opacity: 0.6;
             cursor: not-allowed;
+        }
+
+        #track-thumbnail {
+            transition: transform 0.2s ease;
+        }
+
+        #track-thumbnail:hover {
+            transform: scale(1.02);
         }
     </style>
 
@@ -60,9 +88,21 @@
         const trackName = document.getElementById("track-name");
         const trackArtist = document.getElementById("track-artist");
         const previewLink = document.getElementById("track-preview");
+        const thumbnail = document.getElementById("track-thumbnail");
         const likeBtn = document.getElementById("like-btn");
         const dislikeBtn = document.getElementById("dislike-btn");
         const token = document.querySelector('#antiForm input[name="__RequestVerificationToken"]')?.value;
+
+        function extractYouTubeId(url) {
+            if (!url) return null;
+            const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+            const match = url.match(regex);
+            return match ? match[1] : null;
+        }
+
+        function getYouTubeThumbnail(videoId) {
+            return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+        }
 
         function showTrack(index) {
             if (!card) return;
@@ -75,10 +115,16 @@
             trackArtist.innerText = t.artist;
 
             if (t.previewUrl) {
-                previewLink.href = t.previewUrl;
-                previewLink.style.display = "inline-block";
+                const videoId = extractYouTubeId(t.previewUrl);
+                if (videoId) {
+                    previewLink.href = t.previewUrl;
+                    thumbnail.src = getYouTubeThumbnail(videoId);
+                    thumbnail.alt = `${t.name} - ${t.artist}`;
+                    previewLink.style.display = "block";
+                } else {
+                    previewLink.style.display = "none";
+                }
             } else {
-                previewLink.href = "#";
                 previewLink.style.display = "none";
             }
 

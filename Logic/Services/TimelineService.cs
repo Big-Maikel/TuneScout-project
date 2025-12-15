@@ -12,9 +12,9 @@ namespace Logic.Services
             _timelineRepository = timelineRepository ?? throw new ArgumentNullException(nameof(timelineRepository));
         }
 
-        public TimelineResult GetTimeline(int userId, int topN = 5)
+        public TimelineResult GetTimeline(int userId, int topN = 5, DateTime? fromDate = null, DateTime? toDate = null)
         {
-            return _timelineRepository.GetTimeline(userId, topN);
+            return _timelineRepository.GetTimeline(userId, topN, fromDate, toDate);
         }
     }
 }

@@ -18,10 +18,22 @@ namespace DataAccess.Repositories
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public TimelineResult GetTimeline(int userId, int topN = 5)
+        public TimelineResult GetTimeline(int userId, int topN = 5, DateTime? fromDate = null, DateTime? toDate = null)
         {
-            var likes = _context.Swipes
+            var likesQuery = _context.Swipes
                 .Where(s => s.UserId == userId && EF.Functions.Like(s.Direction, "like"));
+
+            if (fromDate.HasValue)
+            {
+                likesQuery = likesQuery.Where(s => s.Timestamp >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                likesQuery = likesQuery.Where(s => s.Timestamp <= toDate.Value);
+            }
+
+            var likes = likesQuery;
 
             var genreCounts = (from s in likes
                                join t in _context.Tracks on s.TrackId equals t.Id

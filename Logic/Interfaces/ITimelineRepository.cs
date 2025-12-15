@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Logic.Interfaces
 {
@@ -8,6 +9,6 @@ namespace Logic.Interfaces
 
     public interface ITimelineRepository
     {
-        TimelineResult GetTimeline(int userId, int topN = 5);
+        TimelineResult GetTimeline(int userId, int topN = 5, DateTime? fromDate = null, DateTime? toDate = null);
     }
 }

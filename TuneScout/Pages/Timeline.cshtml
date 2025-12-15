@@ -8,6 +8,80 @@
 
 <p>Hier zie je een overzicht van je muzieksmaak gebaseerd op de nummers die je hebt geliked.</p>
 
+<div class="mb-4">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="btn-group" role="group" aria-label="Periode selectie">
+                <a asp-page="/Timeline" asp-route-period="all" 
+                   class="btn @(Model.Period == "all" ? "btn-primary" : "btn-outline-primary")">
+                    Totaal
+                </a>
+                <a asp-page="/Timeline" asp-route-period="month" 
+                   class="btn @(Model.Period == "month" ? "btn-primary" : "btn-outline-primary")">
+                    Deze maand
+                </a>
+                <a asp-page="/Timeline" asp-route-period="week" 
+                   class="btn @(Model.Period == "week" ? "btn-primary" : "btn-outline-primary")">
+                    Deze week
+                </a>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <form method="get" id="dateRangeForm" class="row g-2">
+                <div class="col-auto">
+                    <label for="customFromDate" class="col-form-label">Van:</label>
+                </div>
+                <div class="col-auto">
+                    <input type="date" 
+                           class="form-control" 
+                           id="customFromDate" 
+                           name="fromDate" 
+                           value="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                           max="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-auto">
+                    <label for="customToDate" class="col-form-label">Tot:</label>
+                </div>
+                <div class="col-auto">
+                    <input type="date" 
+                           class="form-control" 
+                           id="customToDate" 
+                           name="toDate" 
+                           value="@Model.ToDate?.ToString("yyyy-MM-dd")"
+                           max="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-success">Toon</button>
+                    <a asp-page="/Timeline" class="btn btn-outline-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    @if (!string.IsNullOrEmpty(Model.ValidationMessage))
+    {
+        <div class="alert alert-danger mt-2">
+            <strong>Fout:</strong> @Model.ValidationMessage
+        </div>
+    }
+    @if (Model.Period == "custom" && Model.FromDate.HasValue)
+    {
+        <div class="alert alert-info mt-2">
+            <small>
+                <strong>Geselecteerde periode:</strong> 
+                @Model.FromDate.Value.ToString("dd MMM yyyy") 
+                @if (Model.ToDate.HasValue)
+                {
+                    <text>tot @Model.ToDate.Value.ToString("dd MMM yyyy")</text>
+                }
+                else
+                {
+                    <text>tot vandaag</text>
+                }
+            </small>
+        </div>
+    }
+</div>
+
 <div class="row">
     <div class="col-md-4">
         <div class="card mb-3">
@@ -15,14 +89,25 @@
             <div class="card-body">
                 @if (!Model.ViewModel.TopGenres.Any())
                 {
-                    <div class="text-muted">Nog geen likes in deze categorie.</div>
+                    <div class="text-muted">Nog geen likes in deze categorie @GetPeriodText().</div>
                 }
                 else
                 {
                     <ol class="mb-0">
                         @foreach (var g in Model.ViewModel.TopGenres)
                         {
-                            <li>@g.Name (@g.Count)</li>
+                            <li>
+                                <a asp-page="/TimelineDetails" 
+                                   asp-route-type="genre" 
+                                   asp-route-id="@g.Id" 
+                                   asp-route-name="@g.Name" 
+                                   asp-route-period="@Model.Period"
+                                   asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                                   asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">
+                                    @g.Name
+                                </a>
+                                (@g.Count)
+                            </li>
                         }
                     </ol>
                 }
@@ -36,14 +121,25 @@
             <div class="card-body">
                 @if (!Model.ViewModel.TopMoods.Any())
                 {
-                    <div class="text-muted">Nog geen likes in deze categorie.</div>
+                    <div class="text-muted">Nog geen likes in deze categorie @GetPeriodText().</div>
                 }
                 else
                 {
                     <ol class="mb-0">
                         @foreach (var m in Model.ViewModel.TopMoods)
                         {
-                            <li>@m.Name (@m.Count)</li>
+                            <li>
+                                <a asp-page="/TimelineDetails" 
+                                   asp-route-type="mood" 
+                                   asp-route-id="@m.Id" 
+                                   asp-route-name="@m.Name" 
+                                   asp-route-period="@Model.Period"
+                                   asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                                   asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">
+                                    @m.Name
+                                </a>
+                                (@m.Count)
+                            </li>
                         }
                     </ol>
                 }
@@ -57,14 +153,25 @@
             <div class="card-body">
                 @if (!Model.ViewModel.TopLanguages.Any())
                 {
-                    <div class="text-muted">Nog geen likes in deze categorie.</div>
+                    <div class="text-muted">Nog geen likes in deze categorie @GetPeriodText().</div>
                 }
                 else
                 {
                     <ol class="mb-0">
                         @foreach (var l in Model.ViewModel.TopLanguages)
                         {
-                            <li>@l.Name (@l.Count)</li>
+                            <li>
+                                <a asp-page="/TimelineDetails" 
+                                   asp-route-type="language" 
+                                   asp-route-id="@l.Id" 
+                                   asp-route-name="@l.Name" 
+                                   asp-route-period="@Model.Period"
+                                   asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                                   asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">
+                                    @l.Name
+                                </a>
+                                (@l.Count)
+                            </li>
                         }
                     </ol>
                 }
@@ -72,3 +179,68 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function() {
+            const fromDateInput = document.getElementById('customFromDate');
+            const toDateInput = document.getElementById('customToDate');
+            const form = document.getElementById('dateRangeForm');
+
+            if (fromDateInput && toDateInput && form) {
+                fromDateInput.addEventListener('change', function() {
+                    if (this.value) {
+                        toDateInput.min = this.value;
+                        if (toDateInput.value && toDateInput.value < this.value) {
+                            toDateInput.value = '';
+                        }
+                    } else {
+                        toDateInput.removeAttribute('min');
+                    }
+                });
+
+                toDateInput.addEventListener('change', function() {
+                    if (this.value) {
+                        fromDateInput.max = this.value;
+                    } else {
+                        fromDateInput.max = new Date().toISOString().split('T')[0];
+                    }
+                });
+
+                form.addEventListener('submit', function(e) {
+                    const fromDate = fromDateInput.value;
+                    const toDate = toDateInput.value;
+
+                    if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) {
+                        e.preventDefault();
+                        alert('De einddatum kan niet eerder zijn dan de begindatum.');
+                        return false;
+                    }
+                });
+
+                if (fromDateInput.value) {
+                    toDateInput.min = fromDateInput.value;
+                }
+                if (toDateInput.value) {
+                    fromDateInput.max = toDateInput.value;
+                }
+            }
+        })();
+    </script>
+}
+
+@functions {
+    string GetPeriodText()
+    {
+        if (Model.Period == "custom" && Model.FromDate.HasValue)
+        {
+            return "in de geselecteerde periode";
+        }
+        return Model.Period switch
+        {
+            "week" => "deze week",
+            "month" => "deze maand",
+            _ => ""
+        };
+    }
+}
