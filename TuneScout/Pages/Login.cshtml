@@ -26,15 +26,15 @@
                                 <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
 
                                 <div class="mb-3">
-                                    <label asp-for="Email" class="form-label"></label>
-                                    <input asp-for="Email" class="form-control" placeholder="E-mail" />
-                                    <span asp-validation-for="Email" class="text-danger"></span>
+                                    <label asp-for="Login.Email" class="form-label"></label>
+                                    <input asp-for="Login.Email" class="form-control" placeholder="E-mail" />
+                                    <span asp-validation-for="Login.Email" class="text-danger"></span>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label asp-for="Password" class="form-label"></label>
-                                    <input asp-for="Password" type="password" class="form-control" placeholder="Wachtwoord" />
-                                    <span asp-validation-for="Password" class="text-danger"></span>
+                                    <label asp-for="Login.Password" class="form-label"></label>
+                                    <input asp-for="Login.Password" type="password" class="form-control" placeholder="Wachtwoord" />
+                                    <span asp-validation-for="Login.Password" class="text-danger"></span>
                                 </div>
 
                                 <div class="d-grid">
@@ -53,21 +53,27 @@
                                 <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
 
                                 <div class="mb-3">
-                                    <label asp-for="RegisterName" class="form-label"></label>
-                                    <input asp-for="RegisterName" class="form-control" placeholder="Naam" />
-                                    <span asp-validation-for="RegisterName" class="text-danger"></span>
+                                    <label asp-for="Register.Name" class="form-label"></label>
+                                    <input asp-for="Register.Name" class="form-control" placeholder="Naam" />
+                                    <span asp-validation-for="Register.Name" class="text-danger"></span>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label asp-for="RegisterEmail" class="form-label"></label>
-                                    <input asp-for="RegisterEmail" class="form-control" placeholder="E-mail" />
-                                    <span asp-validation-for="RegisterEmail" class="text-danger"></span>
+                                    <label asp-for="Register.Email" class="form-label"></label>
+                                    <input asp-for="Register.Email" class="form-control" placeholder="E-mail" />
+                                    <span asp-validation-for="Register.Email" class="text-danger"></span>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label asp-for="RegisterPassword" class="form-label"></label>
-                                    <input asp-for="RegisterPassword" type="password" class="form-control" placeholder="Wachtwoord" />
-                                    <span asp-validation-for="RegisterPassword" class="text-danger"></span>
+                                    <label asp-for="Register.Password" class="form-label"></label>
+                                    <input asp-for="Register.Password" type="password" class="form-control" placeholder="Wachtwoord" />
+                                    <span asp-validation-for="Register.Password" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Register.ConfirmPassword" class="form-label"></label>
+                                    <input asp-for="Register.ConfirmPassword" type="password" class="form-control" placeholder="Bevestig wachtwoord" />
+                                    <span asp-validation-for="Register.ConfirmPassword" class="text-danger"></span>
                                 </div>
 
                                 <div class="d-grid">

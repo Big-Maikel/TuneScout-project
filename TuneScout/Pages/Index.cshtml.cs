@@ -35,17 +35,17 @@ namespace TuneScout.Pages
             IsAuthenticated = userId != null;
 
             var (userSwipes, noExplicit) = GetCombinedSwipesAndSettings();
-            var recs = _song_service_recommend_safe(userSwipes, noExplicit);
+            var recommendedTracks = _song_service_recommend_safe(userSwipes, noExplicit);
 
-            if (recs == null || !recs.Any())
+            if (recommendedTracks == null || !recommendedTracks.Any())
             {
                 _logger?.LogInformation("No recommendations found for user {UserId}. Falling back to DB tracks.", userId);
-                recs = _songService.GetAll()
+                recommendedTracks = _songService.GetAll()
                     .Where(t => !(noExplicit && (t.Explicit ?? false)))
                     .ToList();
             }
 
-            Songs = recs.Select(t => new SongViewModel
+            Songs = recommendedTracks.Select(t => new SongViewModel
             {
                 Id = t.Id,
                 Name = t.Name,
@@ -124,6 +124,9 @@ namespace TuneScout.Pages
                 Explicit = t.Explicit,
                 Valence = t.Valence
             }).ToList();
+
+            //extension methods
+            //automapper / mapster nuget package
 
             return new JsonResult(vm);
         }
