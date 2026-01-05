@@ -36,7 +36,6 @@ namespace TuneScout.Pages
 
         public IActionResult OnPost()
         {
-            // Clear ModelState en valideer alleen Login
             ModelState.Clear();
             if (!TryValidateModel(Login, nameof(Login)))
             {
@@ -74,7 +73,6 @@ namespace TuneScout.Pages
 
         public IActionResult OnPostRegister()
         {
-            // Clear ModelState en valideer alleen Register
             ModelState.Clear();
             if (!TryValidateModel(Register, nameof(Register)))
             {
