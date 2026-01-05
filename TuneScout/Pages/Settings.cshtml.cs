@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using TuneScout.Models;
 
 namespace TuneScout.Pages
 {
@@ -25,21 +26,7 @@ namespace TuneScout.Pages
         }
 
         [BindProperty]
-        public bool NoExplicit { get; set; }
-        [BindProperty]
-        public List<int> SelectedGenreIds { get; set; } = new();
-
-        [BindProperty]
-        public List<int> SelectedMoodIds { get; set; } = new();
-
-        [BindProperty]
-        public int? SelectedLanguageId { get; set; }
-
-        public List<Genre> Genres { get; set; } = new();
-        public List<Mood> Moods { get; set; } = new();
-        public List<(int Id, string Name)> Languages { get; set; } = new();
-
-        public string? Message { get; set; }
+        public SettingsViewModel ViewModel { get; set; } = new();
 
         public IActionResult OnGet()
         {
@@ -49,24 +36,30 @@ namespace TuneScout.Pages
                 return RedirectToPage("/Login");
             }
 
-            Genres = _context.Genres.AsEnumerable().OrderBy(g => g.Name).ToList();
-            Moods = _context.Moods.AsEnumerable().OrderBy(m => m.Name).ToList();
+            ViewModel.Genres = _context.Genres.AsEnumerable().OrderBy(g => g.Name).ToList();
+            ViewModel.Moods = _context.Moods.AsEnumerable().OrderBy(m => m.Name).ToList();
 
-            LoadLanguage();
+            LoadLanguages();
 
             var user = _userService.GetUserById(userId.Value);
             if (user != null)
             {
-                NoExplicit = user.NoExplicit ?? false;
+                ViewModel.NoExplicit = user.NoExplicit ?? false;
             }
 
-            var pref = _context.Preferences.FirstOrDefault(p => p.UserId == userId.Value);
-            if (pref != null)
-            {
-                SelectedGenreIds = pref.GenreId.HasValue ? new List<int> { pref.GenreId.Value } : new List<int>();
-                SelectedMoodIds = pref.MoodId.HasValue ? new List<int> { pref.MoodId.Value } : new List<int>();
-                SelectedLanguageId = pref.LanguageId;
-            }
+            var prefs = _context.Preferences.Where(p => p.UserId == userId.Value).ToList();
+            
+            ViewModel.SelectedGenreIds = prefs.Where(p => p.GenreId.HasValue)
+                                             .Select(p => p.GenreId!.Value)
+                                             .Distinct()
+                                             .ToList();
+            
+            ViewModel.SelectedMoodIds = prefs.Where(p => p.MoodId.HasValue)
+                                            .Select(p => p.MoodId!.Value)
+                                            .Distinct()
+                                            .ToList();
+            
+            ViewModel.SelectedLanguageId = prefs.FirstOrDefault()?.LanguageId;
 
             return Page();
         }
@@ -79,10 +72,10 @@ namespace TuneScout.Pages
                 return RedirectToPage("/Login");
             }
 
-            Genres = _context.Genres.AsEnumerable().OrderBy(g => g.Name).ToList();
-            Moods = _context.Moods.AsEnumerable().OrderBy(m => m.Name).ToList();
+            ViewModel.Genres = _context.Genres.AsEnumerable().OrderBy(g => g.Name).ToList();
+            ViewModel.Moods = _context.Moods.AsEnumerable().OrderBy(m => m.Name).ToList();
 
-            LoadLanguage();
+            LoadLanguages();
 
             var user = _userService.GetUserById(userId.Value);
             if (user == null)
@@ -90,51 +83,83 @@ namespace TuneScout.Pages
                 return RedirectToPage("/Login");
             }
 
-            SelectedGenreIds = SelectedGenreIds?.Where(i => i > 0).ToList() ?? new List<int>();
-            SelectedMoodIds = SelectedMoodIds?.Where(i => i > 0).ToList() ?? new List<int>();
+            ViewModel.SelectedGenreIds = ViewModel.SelectedGenreIds?.Where(i => i > 0).ToList() ?? new List<int>();
+            ViewModel.SelectedMoodIds = ViewModel.SelectedMoodIds?.Where(i => i > 0).ToList() ?? new List<int>();
 
-            user.NoExplicit = NoExplicit;
+            user.NoExplicit = ViewModel.NoExplicit;
             _userService.UpdateUser(user);
 
-            int? genreToSave = SelectedGenreIds.Any() ? SelectedGenreIds.First() : null;
-            int? moodToSave = SelectedMoodIds.Any() ? SelectedMoodIds.First() : null;
-            int? languageToSave = SelectedLanguageId;
-
-            if (genreToSave.HasValue && !RecordExists("genre", genreToSave.Value))
-                genreToSave = null;
-            if (moodToSave.HasValue && !RecordExists("mood", moodToSave.Value))
-                moodToSave = null;
+            var validGenreIds = ViewModel.SelectedGenreIds.Where(id => RecordExists("genre", id)).ToList();
+            var validMoodIds = ViewModel.SelectedMoodIds.Where(id => RecordExists("mood", id)).ToList();
+            
+            int? languageToSave = ViewModel.SelectedLanguageId;
             if (languageToSave.HasValue && !RecordExists("language", languageToSave.Value))
                 languageToSave = null;
 
-            var pref = _context.Preferences.FirstOrDefault(p => p.UserId == userId.Value);
-            if (pref == null)
+            var existingPrefs = _context.Preferences.Where(p => p.UserId == userId.Value).ToList();
+            _context.Preferences.RemoveRange(existingPrefs);
+
+            if (validGenreIds.Any() && validMoodIds.Any())
             {
-                pref = new Preference
+                foreach (var genreId in validGenreIds)
                 {
-                    UserId = userId.Value,
-                    GenreId = genreToSave,
-                    MoodId = moodToSave,
-                    LanguageId = languageToSave
-                };
-                _context.Preferences.Add(pref);
+                    foreach (var moodId in validMoodIds)
+                    {
+                        _context.Preferences.Add(new Preference
+                        {
+                            UserId = userId.Value,
+                            GenreId = genreId,
+                            MoodId = moodId,
+                            LanguageId = languageToSave
+                        });
+                    }
+                }
+            }
+            else if (validGenreIds.Any())
+            {
+                foreach (var genreId in validGenreIds)
+                {
+                    _context.Preferences.Add(new Preference
+                    {
+                        UserId = userId.Value,
+                        GenreId = genreId,
+                        MoodId = null,
+                        LanguageId = languageToSave
+                    });
+                }
+            }
+            else if (validMoodIds.Any())
+            {
+                foreach (var moodId in validMoodIds)
+                {
+                    _context.Preferences.Add(new Preference
+                    {
+                        UserId = userId.Value,
+                        GenreId = null,
+                        MoodId = moodId,
+                        LanguageId = languageToSave
+                    });
+                }
             }
             else
             {
-                pref.GenreId = genreToSave;
-                pref.MoodId = moodToSave;
-                pref.LanguageId = languageToSave;
-                _context.Preferences.Update(pref);
+                _context.Preferences.Add(new Preference
+                {
+                    UserId = userId.Value,
+                    GenreId = null,
+                    MoodId = null,
+                    LanguageId = languageToSave
+                });
             }
 
             try
             {
                 _context.SaveChanges();
-                Message = "Voorkeuren opgeslagen.";
+                ViewModel.Message = "Voorkeuren opgeslagen.";
             }
             catch (Exception ex)
             {
-                Message = "Er is een fout opgetreden bij het opslaan van voorkeuren.";
+                ViewModel.Message = "Er is een fout opgetreden bij het opslaan van voorkeuren.";
             }
 
             return Page();
@@ -164,9 +189,9 @@ namespace TuneScout.Pages
             }
         }
 
-        private void LoadLanguage()
+        private void LoadLanguages()
         {
-            Languages.Clear();
+            ViewModel.Languages.Clear();
             try
             {
                 var conn = _context.Database.GetDbConnection();
@@ -181,10 +206,10 @@ namespace TuneScout.Pages
                     var id = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
                     var name = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
                     if (id > 0)
-                        Languages.Add((id, name));
+                        ViewModel.Languages.Add((id, name));
                 }
 
-                if (Languages.Count > 0)
+                if (ViewModel.Languages.Count > 0)
                     return;
             }
             catch
@@ -192,7 +217,7 @@ namespace TuneScout.Pages
                 
             }
 
-            Languages = new List<(int, string)>
+            ViewModel.Languages = new List<(int, string)>
             {
                 (1, "English"),
                 (2, "Nederlands"),
