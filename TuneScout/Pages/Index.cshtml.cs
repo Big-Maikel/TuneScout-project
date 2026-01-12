@@ -1,14 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
 using Logic.Services;
-using TuneScout.Models;
-using System.Linq;
-using DataAccess.Contexts;
 using Logic.Models;
+using DataAccess.Contexts;
+using TuneScout.Models;
+using TuneScout.Mappings;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 
 namespace TuneScout.Pages
 {
@@ -17,12 +19,16 @@ namespace TuneScout.Pages
         private readonly ILogger<IndexModel> _logger;
         private readonly TuneScoutContext _context;
         private readonly SongService _songService;
+
         private const string SessionAnonSwipesKey = "AnonSwipesV1";
 
         public List<SongViewModel> Songs { get; set; } = new();
         public bool IsAuthenticated { get; set; }
 
-        public IndexModel(ILogger<IndexModel> logger, TuneScoutContext context, SongService songService)
+        public IndexModel(
+            ILogger<IndexModel> logger,
+            TuneScoutContext context,
+            SongService songService)
         {
             _logger = logger;
             _context = context;
@@ -35,26 +41,23 @@ namespace TuneScout.Pages
             IsAuthenticated = userId != null;
 
             var (userSwipes, noExplicit) = GetCombinedSwipesAndSettings();
-            var recommendedTracks = _song_service_recommend_safe(userSwipes, noExplicit);
+            var recommendedTracks = RecommendSafe(userSwipes, noExplicit);
 
-            if (recommendedTracks == null || !recommendedTracks.Any())
+            if (!recommendedTracks.Any())
             {
-                _logger?.LogInformation("No recommendations found for user {UserId}. Falling back to DB tracks.", userId);
+                _logger?.LogInformation(
+                    "No recommendations found for user {UserId}. Falling back to DB tracks.",
+                    userId
+                );
+
                 recommendedTracks = _songService.GetAll()
                     .Where(t => !(noExplicit && (t.Explicit ?? false)))
                     .ToList();
             }
 
-            Songs = recommendedTracks.Select(t => new SongViewModel
-            {
-                Id = t.Id,
-                Name = t.Name,
-                Artist = t.Artist,
-                SpotifyUri = t.SpotifyUri,
-                PreviewUrl = t.PreviewUrl,
-                Explicit = t.Explicit,
-                Valence = t.Valence
-            }).ToList();
+            Songs = recommendedTracks
+                .Select(t => t.ToViewModel())
+                .ToList();
         }
 
         [ValidateAntiForgeryToken]
@@ -62,20 +65,38 @@ namespace TuneScout.Pages
         {
             if (!_context.Tracks.Any(t => t.Id == trackId))
             {
-                _logger?.LogWarning("Swipe attempt for non-existent track {TrackId}", trackId);
-                return BadRequest(new { success = false, error = "Track not found" });
+                _logger?.LogWarning(
+                    "Swipe attempt for non-existent track {TrackId}",
+                    trackId
+                );
+
+                return BadRequest(new
+                {
+                    success = false,
+                    error = "Track not found"
+                });
             }
 
             var userId = HttpContext.Session.GetInt32("UserId");
             if (userId == null)
             {
-                return new JsonResult(new { success = false, error = "Not authenticated" }) { StatusCode = 401 };
+                return new JsonResult(new
+                {
+                    success = false,
+                    error = "Not authenticated"
+                })
+                { StatusCode = 401 };
             }
 
-            var exists = _context.Swipes.Any(s => s.UserId == userId.Value && s.TrackId == trackId);
-            if (exists)
+            if (_context.Swipes.Any(s =>
+                s.UserId == userId.Value &&
+                s.TrackId == trackId))
             {
-                return new JsonResult(new { success = true, message = "Already recorded" });
+                return new JsonResult(new
+                {
+                    success = true,
+                    message = "Already recorded"
+                });
             }
 
             var swipe = new Swipe
@@ -91,12 +112,28 @@ namespace TuneScout.Pages
             try
             {
                 _context.SaveChanges();
-                _logger?.LogInformation("Saved swipe for user {UserId}, track {TrackId}, direction {Direction}", userId.Value, trackId, direction);
+
+                _logger?.LogInformation(
+                    "Saved swipe for user {UserId}, track {TrackId}, direction {Direction}",
+                    userId.Value,
+                    trackId,
+                    direction
+                );
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Failed to save swipe for user {UserId}, track {TrackId}", userId, trackId);
-                return StatusCode(500, new { success = false, error = "Database error while saving swipe." });
+                _logger?.LogError(
+                    ex,
+                    "Failed to save swipe for user {UserId}, track {TrackId}",
+                    userId,
+                    trackId
+                );
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    error = "Database error while saving swipe."
+                });
             }
 
             return new JsonResult(new { success = true });
@@ -105,66 +142,62 @@ namespace TuneScout.Pages
         public IActionResult OnGetRecommendations()
         {
             var (userSwipes, noExplicit) = GetCombinedSwipesAndSettings();
-            var recs = _song_service_recommend_safe(userSwipes, noExplicit);
+            var recs = RecommendSafe(userSwipes, noExplicit);
 
-            if (recs == null || !recs.Any())
+            if (!recs.Any())
             {
                 recs = _songService.GetAll()
                     .Where(t => !(noExplicit && (t.Explicit ?? false)))
                     .ToList();
             }
 
-            var vm = recs.Select(t => new SongViewModel
-            {
-                Id = t.Id,
-                Name = t.Name,
-                Artist = t.Artist,
-                SpotifyUri = t.SpotifyUri,
-                PreviewUrl = t.PreviewUrl,
-                Explicit = t.Explicit,
-                Valence = t.Valence
-            }).ToList();
-
-            //extension methods
-            //automapper / mapster nuget package
+            var vm = recs
+                .Select(t => t.ToViewModel())
+                .ToList();
 
             return new JsonResult(vm);
         }
 
-
-        private (IEnumerable<Swipe> userSwipes, bool noExplicit) GetCombinedSwipesAndSettings()
+        private (IEnumerable<Swipe> userSwipes, bool noExplicit)
+            GetCombinedSwipesAndSettings()
         {
             var userId = HttpContext.Session.GetInt32("UserId");
+
             IEnumerable<Swipe> dbSwipes = Array.Empty<Swipe>();
             bool noExplicit = false;
 
             if (userId != null)
             {
-                dbSwipes = _context.Swipes.Where(s => s.UserId == userId.Value).ToList();
+                dbSwipes = _context.Swipes
+                    .Where(s => s.UserId == userId.Value)
+                    .ToList();
+
                 var user = _context.Users.Find(userId.Value);
                 noExplicit = user?.NoExplicit ?? false;
             }
 
-            var session = GetSessionAnonSwipes();
-            var sessionSwipes = session.Select(s => new Swipe
-            {
-                UserId = userId ?? 0,
-                TrackId = s.TrackId,
-                Direction = s.Direction ?? "dislike",
-                Timestamp = s.Timestamp
-            });
+            var sessionSwipes = GetSessionAnonSwipes()
+                .Select(s => new Swipe
+                {
+                    UserId = userId ?? 0,
+                    TrackId = s.TrackId,
+                    Direction = s.Direction ?? "dislike",
+                    Timestamp = s.Timestamp
+                });
 
-            var combined = dbSwipes.Concat(sessionSwipes);
-            return (combined, noExplicit);
+            return (dbSwipes.Concat(sessionSwipes), noExplicit);
         }
 
         private List<SessionSwipe> GetSessionAnonSwipes()
         {
             var json = HttpContext.Session.GetString(SessionAnonSwipesKey);
-            if (string.IsNullOrEmpty(json)) return new List<SessionSwipe>();
+            if (string.IsNullOrEmpty(json))
+                return new List<SessionSwipe>();
+
             try
             {
-                return JsonSerializer.Deserialize<List<SessionSwipe>>(json) ?? new List<SessionSwipe>();
+                return JsonSerializer.Deserialize<List<SessionSwipe>>(json)
+                       ?? new List<SessionSwipe>();
             }
             catch
             {
@@ -172,15 +205,15 @@ namespace TuneScout.Pages
             }
         }
 
-        private void SaveSessionAnonSwipes(List<SessionSwipe> swipes)
+        private List<Track> RecommendSafe(
+            IEnumerable<Swipe> swipes,
+            bool noExplicit)
         {
-            var json = JsonSerializer.Serialize(swipes);
-            HttpContext.Session.SetString(SessionAnonSwipesKey, json);
-        }
-
-        private List<Track> _song_service_recommend_safe(IEnumerable<Swipe> swipes, bool noExplicit)
-        {
-            return _songService.Recommend(swipes ?? Array.Empty<Swipe>(), noExplicit, max: 100);
+            return _songService.Recommend(
+                swipes ?? Array.Empty<Swipe>(),
+                noExplicit,
+                max: 100
+            );
         }
 
         private class SessionSwipe

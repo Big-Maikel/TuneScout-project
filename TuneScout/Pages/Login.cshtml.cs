@@ -32,15 +32,25 @@ namespace TuneScout.Pages
         public string? ErrorMessage { get; set; }
         public string? RegisterMessage { get; set; }
 
-        public void OnGet() { }
+        public void OnGet() 
+        {
+            if (TempData["SuccessMessage"] != null)
+            {
+                RegisterMessage = TempData["SuccessMessage"]?.ToString();
+            }
+        }
 
         public IActionResult OnPost()
         {
-            ModelState.Clear();
-            if (!TryValidateModel(Login, nameof(Login)))
+            var loginErrors = ModelState
+                .Where(x => x.Key.StartsWith("Login."))
+                .SelectMany(x => x.Value.Errors)
+                .ToList();
+
+            if (loginErrors.Any())
             {
                 _logger.LogWarning("Login validation failed");
-                foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                foreach (var error in loginErrors)
                 {
                     _logger.LogWarning("Validation error: {Error}", error.ErrorMessage);
                 }
@@ -55,14 +65,26 @@ namespace TuneScout.Pages
 
             if (user != null)
             {
+                bool passwordValid = false;
+
                 var verification = _passwordHasher.VerifyHashedPassword(user, user.Password ?? string.Empty, Login.Password);
-                if (verification == PasswordVerificationResult.Success)
+                if (verification == PasswordVerificationResult.Success || verification == PasswordVerificationResult.SuccessRehashNeeded)
+                {
+                    passwordValid = true;
+                }
+                else if (user.Password == Login.Password)
+                {
+                    passwordValid = true;
+                    _logger.LogWarning("User {Email} logged in with plain text password. Consider rehashing.", user.Email);
+                }
+
+                if (passwordValid)
                 {
                     HttpContext.Session.SetInt32("UserId", user.Id);
                     HttpContext.Session.SetString("UserName", user.Name ?? string.Empty);
                     
                     _logger.LogInformation("Login successful for user: {UserId}", user.Id);
-                    return LocalRedirect(Url.Content("~/"));
+                    return RedirectToPage("/Index");
                 }
             }
 
@@ -73,11 +95,15 @@ namespace TuneScout.Pages
 
         public IActionResult OnPostRegister()
         {
-            ModelState.Clear();
-            if (!TryValidateModel(Register, nameof(Register)))
+            var registerErrors = ModelState
+                .Where(x => x.Key.StartsWith("Register."))
+                .SelectMany(x => x.Value.Errors)
+                .ToList();
+
+            if (registerErrors.Any())
             {
                 _logger.LogWarning("Register validation failed");
-                foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                foreach (var error in registerErrors)
                 {
                     _logger.LogWarning("Validation error: {Error}", error.ErrorMessage);
                 }
@@ -107,17 +133,8 @@ namespace TuneScout.Pages
             _userService.CreateUser(newUser);
             _logger.LogInformation("User created successfully: {Email}", Register.Email);
 
-            var created = _userService.GetAllUsers().FirstOrDefault(u => u.Email == Register.Email);
-            if (created != null)
-            {
-                HttpContext.Session.SetInt32("UserId", created.Id);
-                HttpContext.Session.SetString("UserName", created.Name ?? string.Empty);
-                _logger.LogInformation("Registration successful, user logged in: {UserId}", created.Id);
-                return LocalRedirect(Url.Content("~/"));
-            }
-
-            RegisterMessage = "Registratie gelukt! Je kunt nu inloggen.";
-            return Page();
+            TempData["SuccessMessage"] = "Registratie gelukt! Je kunt nu inloggen.";
+            return RedirectToPage("/Login");
         }
 
         public IActionResult OnGetLogout()

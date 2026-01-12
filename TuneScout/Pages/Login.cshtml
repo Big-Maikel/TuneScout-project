@@ -11,6 +11,14 @@
                 <div class="card-body p-4">
                     <h3 class="card-title text-center mb-3">Welkom bij TuneScout</h3>
 
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
                     <ul class="nav nav-tabs justify-content-center" id="authTabs" role="tablist">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login-pane" type="button" role="tab" aria-controls="login-pane" aria-selected="true">Inloggen</button>
@@ -104,10 +112,10 @@
             var showRegister = @(!string.IsNullOrEmpty(Model.RegisterMessage) ? "true" : "false");
             var showLogin = @(!string.IsNullOrEmpty(Model.ErrorMessage) ? "true" : "false");
 
-            if (showRegister === "true") {
+            if (showRegister && showRegister === "true") {
                 var registerTab = document.querySelector('#register-tab');
                 if (registerTab) new bootstrap.Tab(registerTab).show();
-            } else if (showLogin === "true") {
+            } else if (showLogin && showLogin === "true") {
                 var loginTab = document.querySelector('#login-tab');
                 if (loginTab) new bootstrap.Tab(loginTab).show();
             }

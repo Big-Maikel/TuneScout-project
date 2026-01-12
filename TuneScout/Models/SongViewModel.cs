@@ -1,7 +1,4 @@
-﻿using System;
-using Logic.Models;
-
-namespace TuneScout.Models
+﻿namespace TuneScout.Models
 {
     public class SongViewModel
     {
@@ -12,16 +9,5 @@ namespace TuneScout.Models
         public string? PreviewUrl { get; set; }
         public bool? Explicit { get; set; }
         public double Valence { get; set; }
-
-        public static SongViewModel FromTrack(Track t) => new SongViewModel
-        {
-            Id = t.Id,
-            Name = t.Name ?? string.Empty,
-            Artist = t.Artist ?? string.Empty,
-            SpotifyUri = t.SpotifyUri ?? string.Empty,
-            PreviewUrl = t.PreviewUrl,
-            Explicit = t.Explicit,
-            Valence = t.Valence
-        };
     }
 }
