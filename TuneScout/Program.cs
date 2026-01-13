@@ -33,6 +33,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseStatusCodePagesWithReExecute("/exeption");
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
