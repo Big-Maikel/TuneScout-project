@@ -28,7 +28,6 @@ namespace TuneScout.Pages
 
         [BindProperty]
         public RegisterViewModel Register { get; set; } = new RegisterViewModel();
-
         public string? ErrorMessage { get; set; }
         public string? RegisterMessage { get; set; }
 
