@@ -7,6 +7,7 @@ namespace TuneScout.Pages
     {
         public void OnGet()
         {
+            Response.StatusCode = 404;
         }
     }
 }

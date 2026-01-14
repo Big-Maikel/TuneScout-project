@@ -1,9 +1,52 @@
 ﻿@page
-@model TuneScout.Pages.exeptionModel
+@model exeptionModel
 @{
     Layout = "_Layout";
 }
 
-<h1>404 - Pagina niet gevonden </h1>
-<p>Sorry, de pagina die je zoekt bestaat niet.</p>
-<a href="/">Ga terug naar de startpagina</a>
+<div style="text-align:center; padding: 50px; font-family: 'Segoe UI', sans-serif;">
+    <h1 style="font-size: 80px">🎵 404</h1>
+    <h2>U heeft de verkeerde noot geraakt</h2>
+    <p style="color: #666; font-size: 18px;">
+        De pagina die je zoekt bestaat niet.
+    </p>
+    <a href="/">Ga terug naar de startpagina</a>
+    <p>
+        <a href="/" style="
+            text-decoration: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: background-color 0.3s;">
+            Terug naar home
+        </a>
+    </p>
+
+    <div class="bounce" style="margin-top:50px; font-size:50px;">
+        🎶
+    </div>
+</div>
+
+<style>
+    @@keyframes bounce {
+        0%, 20%, 50%, 80%, 100%
+
+    {
+        transform: translateY(0);
+    }
+
+    40% {
+        transform: translateY(-20px);
+    }
+
+    60% {
+        transform: translateY(-10px);
+    }
+
+    }
+
+    .bounce {
+        animation: bounce 2s infinite;
+    }
+</style>
