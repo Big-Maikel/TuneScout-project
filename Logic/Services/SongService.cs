@@ -21,7 +21,7 @@ namespace Logic.Services
 
         public IReadOnlyList<Track> GetAll() => _songRepository.GetAll();
 
-        public List<Track> Recommend(IEnumerable<Swipe>? userSwipes, bool noExplicit = false, int max = 50)
+        public List<Track> Recommend(IEnumerable<Swipe>? userSwipes, bool noExplicit = false, int? languageId = null, int max = 50)
         {
             userSwipes ??= Array.Empty<Swipe>();
 
@@ -50,6 +50,7 @@ namespace Logic.Services
             var candidates = allTracks
                 .Where(t => !swipedIds.Contains(t.Id))
                 .Where(t => !(noExplicit && (t.Explicit ?? false)))
+                .Where(t => !languageId.HasValue || t.LanguageId == languageId.Value)
                 .ToList();
 
             var rnd = Random.Shared;

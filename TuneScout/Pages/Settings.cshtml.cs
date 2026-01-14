@@ -219,11 +219,11 @@ namespace TuneScout.Pages
 
             ViewModel.Languages = new List<(int, string)>
             {
-                (1, "English"),
-                (2, "Nederlands"),
-                (3, "Español"),
-                (4, "Français"),
-                (5, "Deutsch")
+                (1, "Nederlands"),
+                (2, "Engels"),
+                (3, "Duits"),
+                (4, "Frans"),
+                (5, "Spaans")
             };
         }
     }

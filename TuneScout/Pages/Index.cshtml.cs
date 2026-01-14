@@ -40,8 +40,8 @@ namespace TuneScout.Pages
             var userId = HttpContext.Session.GetInt32("UserId");
             IsAuthenticated = userId != null;
 
-            var (userSwipes, noExplicit) = GetCombinedSwipesAndSettings();
-            var recommendedTracks = RecommendSafe(userSwipes, noExplicit);
+            var (userSwipes, noExplicit, languageId) = GetCombinedSwipesAndSettings();
+            var recommendedTracks = RecommendSafe(userSwipes, noExplicit, languageId);
 
             if (!recommendedTracks.Any())
             {
@@ -52,6 +52,7 @@ namespace TuneScout.Pages
 
                 recommendedTracks = _songService.GetAll()
                     .Where(t => !(noExplicit && (t.Explicit ?? false)))
+                    .Where(t => !languageId.HasValue || t.LanguageId == languageId.Value)
                     .ToList();
             }
 
@@ -141,13 +142,14 @@ namespace TuneScout.Pages
 
         public IActionResult OnGetRecommendations()
         {
-            var (userSwipes, noExplicit) = GetCombinedSwipesAndSettings();
-            var recs = RecommendSafe(userSwipes, noExplicit);
+            var (userSwipes, noExplicit, languageId) = GetCombinedSwipesAndSettings();
+            var recs = RecommendSafe(userSwipes, noExplicit, languageId);
 
             if (!recs.Any())
             {
                 recs = _songService.GetAll()
                     .Where(t => !(noExplicit && (t.Explicit ?? false)))
+                    .Where(t => !languageId.HasValue || t.LanguageId == languageId.Value)
                     .ToList();
             }
 
@@ -158,13 +160,14 @@ namespace TuneScout.Pages
             return new JsonResult(vm);
         }
 
-        private (IEnumerable<Swipe> userSwipes, bool noExplicit)
+        private (IEnumerable<Swipe> userSwipes, bool noExplicit, int? languageId)
             GetCombinedSwipesAndSettings()
         {
             var userId = HttpContext.Session.GetInt32("UserId");
 
             IEnumerable<Swipe> dbSwipes = Array.Empty<Swipe>();
             bool noExplicit = false;
+            int? languageId = null;
 
             if (userId != null)
             {
@@ -174,6 +177,12 @@ namespace TuneScout.Pages
 
                 var user = _context.Users.Find(userId.Value);
                 noExplicit = user?.NoExplicit ?? false;
+
+                var preference = _context.Preferences
+                    .Where(p => p.UserId == userId.Value && p.LanguageId.HasValue)
+                    .FirstOrDefault();
+                
+                languageId = preference?.LanguageId;
             }
 
             var sessionSwipes = GetSessionAnonSwipes()
@@ -185,7 +194,7 @@ namespace TuneScout.Pages
                     Timestamp = s.Timestamp
                 });
 
-            return (dbSwipes.Concat(sessionSwipes), noExplicit);
+            return (dbSwipes.Concat(sessionSwipes), noExplicit, languageId);
         }
 
         private List<SessionSwipe> GetSessionAnonSwipes()
@@ -207,11 +216,13 @@ namespace TuneScout.Pages
 
         private List<Track> RecommendSafe(
             IEnumerable<Swipe> swipes,
-            bool noExplicit)
+            bool noExplicit,
+            int? languageId)
         {
             return _songService.Recommend(
                 swipes ?? Array.Empty<Swipe>(),
                 noExplicit,
+                languageId,
                 max: 100
             );
         }
