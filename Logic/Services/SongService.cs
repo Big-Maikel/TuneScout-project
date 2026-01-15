@@ -55,14 +55,12 @@ namespace Logic.Services
                 genreScores[gid] = genreScores.GetValueOrDefault(gid) - 0.8;
             }
 
-            // Voeg extra gewicht toe aan voorkeursgenres
             foreach (var genreId in preferredGenreIds)
             {
                 genreScores[genreId] = genreScores.GetValueOrDefault(genreId) + 5.0;
             }
 
             var moodScores = new Dictionary<int, double>();
-            // Voeg gewicht toe aan voorkeursmood
             foreach (var moodId in preferredMoodIds)
             {
                 moodScores[moodId] = moodScores.GetValueOrDefault(moodId) + 5.0;
